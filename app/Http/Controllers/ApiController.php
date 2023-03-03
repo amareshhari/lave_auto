@@ -19,40 +19,6 @@ use App\MediaSportlight;
 
 class ApiController extends Controller
 {
-    public function wards(){
-        $return_arr = array();
-        try{
-            $wards = Ward::where('status',1)->get();
-            if(isset($wards) && count($wards) > 0){
-                $return_arr['success'] = 1;
-                $return_arr['msg'] = 'Wards Found';
-                $return_arr['wards'] = $wards;
-            }else{
-                $return_arr['success'] = 0;
-                $return_arr['msg'] = 'Wards not Found';
-                $return_arr['wards'] = array();
-            }
-        }catch(\Exception $e){
-            $return_arr['success'] = 0;
-            $return_arr['msg'] = 'Wards not Found';
-            $return_arr['wards'] = array();
-            $return_arr['errors'] = $e->getMessage();
-        }
-        return response()->json($return_arr);
-    }
-
-    public function pincodes(){
-        $return_arr = array();
-        $return_arr['pincodes'][0] = 'Puliyanthopu 600012';
-        $return_arr['pincodes'][1] = 'Purasawalkam 600084';
-        $return_arr['pincodes'][2] = 'Choolar 600112';
-        $return_arr['pincodes'][3] = 'Chetpet 600031';
-        $return_arr['pincodes'][4] = 'Egmore 600008';
-        $return_arr['pincodes'][5] = 'Veppery 600007';
-        $return_arr['pincodes'][6] = 'Pudhupet 600002';
-        return response()->json($return_arr);
-    }
-
     public function login(Request $request){
         $return_arr = array();
         try{
@@ -63,16 +29,15 @@ class ApiController extends Controller
                     $min = pow(10, 6 - 1);
                     $max = pow(10, 6) - 1;
                     $otp = mt_rand($min, $max);
-                    $template = "One Time Password(OTP): $otp Kindly Provide OTP for Mobile No Confirmation";
-                    User::send_sms($request->mobile,$template);
+                    // $template = "One Time Password(OTP): $otp Kindly Provide OTP for Mobile No Confirmation";
+                    // User::send_sms($request->mobile,$template);
                 }
                 $user = User::where('mobile',$request->mobile)->first();
                 if($user && $user->status){
-                    Auth::login($user);
-                    $token = auth()->user()->createToken('API Token')->accessToken;
+                    $user->otp = $otp;
+                    $user->save();
                     $return_arr['success'] = 1;
                     $return_arr['msg'] = 'User Found';
-                    $return_arr['token'] = $token;
                     $return_arr['otp'] = $otp;
                     $return_arr['user'] = $user;
                 }else{
@@ -80,21 +45,18 @@ class ApiController extends Controller
                     $return_arr['msg'] = 'User not Found';
                     $return_arr['token'] = '';
                     $return_arr['otp'] = $otp;
-                    $return_arr['user'] = array();
                 }
             }else{
                 $return_arr['success'] = 0;
                 $return_arr['msg'] = 'Please enter the valid input';
                 $return_arr['token'] = '';
                 $return_arr['otp'] = '';
-                $return_arr['user'] = array();
             }
         }catch(\Exception $e){
             $return_arr['success'] = 0;
             $return_arr['msg'] = 'Invalid!';
             $return_arr['token'] = '';
             $return_arr['otp'] = '';
-            $return_arr['user'] = array();
             $return_arr['errors'] = $e->getMessage();
         }
         return response()->json($return_arr);
@@ -107,8 +69,8 @@ class ApiController extends Controller
                 $min = pow(10, 6 - 1);
                 $max = pow(10, 6) - 1;
                 $otp = mt_rand($min, $max);
-                $template = "One Time Password(OTP): $otp Kindly Provide OTP for Mobile No Confirmation";
-                User::send_sms($request->mobile,$template);
+                // $template = "One Time Password(OTP): $otp Kindly Provide OTP for Mobile No Confirmation";
+                // User::send_sms($request->mobile,$template);
                 $return_arr['success'] = 1;
                 $return_arr['msg'] = 'OTP Message';
                 $return_arr['otp'] = $otp;
@@ -126,9 +88,41 @@ class ApiController extends Controller
         return response()->json($return_arr);
     }
 
+    public function otp_verify(Request $request){
+        $return_arr = array();
+        try{
+            if($request->mobile && $request->otp){
+                $user = User::where('mobile',$request->mobile)->where('otp',$request->otp)->first();
+                if($user){
+                    Auth::login($user);
+                    $token = auth()->user()->createToken('API Token')->accessToken;
+                    $return_arr['success'] = 1;
+                    $return_arr['msg'] = 'Successfully logged in';
+                    $return_arr['token'] = $token;
+                    $return_arr['user'] = $user;
+                }else{
+                    $return_arr['success'] = 0;
+                    $return_arr['msg'] = 'Invalid OTP';
+                    $return_arr['token'] = '';
+                    $return_arr['user'] = array();
+                }
+            }else{
+                $return_arr['success'] = 0;
+                $return_arr['msg'] = 'Please enter the valid input';
+                $return_arr['otp'] = '';
+            }
+        }catch(\Exception $e){
+            $return_arr['success'] = 0;
+            $return_arr['msg'] = 'Invalid!';
+            $return_arr['otp'] = '';
+            $return_arr['errors'] = $e->getMessage();
+        }
+        return response()->json($return_arr);
+    }
+
     public function register(Request $request){
         try{
-            if($request->name && $request->gender && $request->mobile && $request->email && $request->dob && $request->address && $request->ward_id && $request->pincode){
+            if($request->name && $request->gender && $request->mobile && $request->email){
                 $user = User::where('mobile',$request->mobile)->first();
                 if(!$user){
                     $user = new User();
@@ -137,12 +131,9 @@ class ApiController extends Controller
                 $user->gender = $request->gender;
                 $user->mobile = $request->mobile;
                 $user->email = $request->email;
-                $user->dob = date('Y-m-d',strtotime($request->dob));
-                $user->address = $request->address;
-                $user->ward_id = $request->ward_id;
-                $user->pincode = $request->pincode;
-                $user->latitude = !empty($request->latitude)?$request->latitude:'';
-                $user->longitude = !empty($request->longitude)?$request->longitude:'';
+                $user->profile_image = '';
+                $user->otp = 0;
+                $user->otp_verified = 0;
                 $user->status = 1;
                 if($user->save()){
                     Auth::login($user);

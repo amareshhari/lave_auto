@@ -17,12 +17,12 @@ class CreateUsersTable extends Migration
             $table->id();
             $table->string('name',100);
             $table->enum('gender',['male','female','others']);
-            $table->date('dob');
+            $table->string('profile_image',255);
             $table->string('email',100);
             $table->string('mobile',20);
-            $table->text('address');
-            $table->unsignedBigInteger('ward_id');
-            $table->string('pincode',20);
+            $table->string('otp',10);
+            $table->boolean('otp_verified');
+            $table->string('password',255)->nullable();
             $table->boolean('status');
             $table->timestamps();
         });
