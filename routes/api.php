@@ -15,9 +15,8 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::post('/login','ApiController@login')->name('user.login');
-Route::post('/otp_send','ApiController@otp_send')->name('user.otp_send');
-Route::post('/register','ApiController@register')->name('user.register');
 Route::post('/otp_verify','ApiController@otp_verify')->name('user.otp_verify');
+Route::post('/register','ApiController@register')->name('user.register');
 Route::middleware('auth:api')->group(function(){
     
 });

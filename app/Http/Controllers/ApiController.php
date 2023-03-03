@@ -62,32 +62,6 @@ class ApiController extends Controller
         return response()->json($return_arr);
     }
 
-    public function otp_send(Request $request){
-        $return_arr = array();
-        try{
-            if($request->mobile){
-                $min = pow(10, 6 - 1);
-                $max = pow(10, 6) - 1;
-                $otp = mt_rand($min, $max);
-                // $template = "One Time Password(OTP): $otp Kindly Provide OTP for Mobile No Confirmation";
-                // User::send_sms($request->mobile,$template);
-                $return_arr['success'] = 1;
-                $return_arr['msg'] = 'OTP Message';
-                $return_arr['otp'] = $otp;
-            }else{
-                $return_arr['success'] = 0;
-                $return_arr['msg'] = 'Please enter the valid input';
-                $return_arr['otp'] = '';
-            }
-        }catch(\Exception $e){
-            $return_arr['success'] = 0;
-            $return_arr['msg'] = 'Invalid!';
-            $return_arr['otp'] = '';
-            $return_arr['errors'] = $e->getMessage();
-        }
-        return response()->json($return_arr);
-    }
-
     public function otp_verify(Request $request){
         $return_arr = array();
         try{
